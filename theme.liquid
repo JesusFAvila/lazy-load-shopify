@@ -1,0 +1,57 @@
+/**
+ * Función para implementar Lazy Load en imágenes de Shopify.
+ */
+function implementLazyLoad() {
+    // 1. Modificar las imágenes para usar data-src en lugar de src
+    var images = document.querySelectorAll('img:not([data-src])'); // Selecciona todas las imágenes que no tienen el atributo data-src
+    images.forEach(function(img) {
+        // Si la imagen tiene un atributo src, muévelo a data-src
+        if (img.getAttribute('src')) {
+            img.setAttribute('data-src', img.getAttribute('src'));
+            img.removeAttribute('src');
+        }
+        
+        // Si la imagen tiene un atributo srcset, muévelo a data-srcset
+        if (img.getAttribute('srcset')) {
+            img.setAttribute('data-srcset', img.getAttribute('srcset'));
+            img.removeAttribute('srcset');
+        }
+        
+        // Añadir la clase lazyload a la imagen
+        img.classList.add('lazyload');
+    });
+
+    // 2. Implementación del Lazy Load usando IntersectionObserver
+    var lazyImages = [].slice.call(document.querySelectorAll("img.lazyload"));
+    if ("IntersectionObserver" in window) {
+        let lazyImageObserver = new IntersectionObserver(function(entries, observer) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    let lazyImage = entry.target;
+                    lazyImage.src = lazyImage.dataset.src;
+                    if (lazyImage.dataset.srcset) {
+                        lazyImage.srcset = lazyImage.dataset.srcset;
+                    }
+                    lazyImage.classList.remove("lazyload");
+                    lazyImageObserver.unobserve(lazyImage);
+                }
+            });
+        });
+
+        lazyImages.forEach(function(lazyImage) {
+            lazyImageObserver.observe(lazyImage);
+        });
+    } else {
+        // Fallback para navegadores que no soportan IntersectionObserver
+        lazyImages.forEach(function(lazyImage) {
+            lazyImage.src = lazyImage.dataset.src;
+            if (lazyImage.dataset.srcset) {
+                lazyImage.srcset = lazyImage.dataset.srcset;
+            }
+            lazyImage.classList.remove("lazyload");
+        });
+    }
+}
+
+// Ejecutar la función cuando el contenido del DOM esté completamente cargado
+document.addEventListener("DOMContentLoaded", implementLazyLoad);
